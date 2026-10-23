@@ -3,7 +3,7 @@ import 'game_button.dart';
 
 // Reusable navigation bar for the games main screens
 class GameNavBar extends StatelessWidget {
-  // Indicated which screen is currently selected
+  // Indicates which screen is currently selected
   final GameNavTab selectedTab;
 
   // Functions supplied by the parent to handle navigation
