@@ -6,6 +6,7 @@ class TownMemberRow extends StatelessWidget {
   // Info displayed in the row
   final String memberName;
   final String tokenLabel;
+  final bool showToken; // Determines whether the token is displayed
 
   // Function supplied by the parent when a member is selected
   final VoidCallback onMemberPressed;
@@ -16,6 +17,7 @@ class TownMemberRow extends StatelessWidget {
     required this.memberName,
     required this.onMemberPressed,
     this.tokenLabel = '?',
+    this.showToken = true,
   });
 
   @override
@@ -43,26 +45,28 @@ class TownMemberRow extends StatelessWidget {
             ),
           ),
 
-          // Space between button and token
-          const SizedBox(width: 12),
+          if (showToken) ...[
+            // Space between button and token
+            const SizedBox(width: 12),
 
-          // Visual placeholder for the member's token
-          Container(
-            width: 70,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: colors.surfaceContainerHighest,
-              border: Border.all(color: colors.outline),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              tokenLabel,
-              style: TextStyle(
-                color: colors.onSurface,
+            // Visual placeholder for the member's token
+            Container(
+              width: 70,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerHighest,
+                border: Border.all(color: colors.outline),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                tokenLabel,
+                style: TextStyle(
+                  color: colors.onSurface,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

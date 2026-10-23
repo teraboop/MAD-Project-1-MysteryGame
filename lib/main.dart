@@ -2,6 +2,19 @@
 import 'package:flutter/material.dart';
 import 'screens/menu.dart';
 import 'screens/town.dart';
+import 'screens/evidence.dart';
+
+// Temporary town member names until the game engine is implemented
+const List<String> townMembers = [
+  'Town Member 1',
+  'Town Member 2',
+  'Town Member 3',
+  'Town Member 4',
+  'Town Member 5',
+  'Town Member 6',
+  'Town Member 7',
+  'Town Member 8',
+];
 
 void main() {
   runApp(const MyApp());
@@ -24,42 +37,11 @@ class MyApp extends StatelessWidget {
         ),
       ),
 
-      // Display main menu when the app starts
+      // Display the main menu when the app starts
       home: Builder(
         builder: (context) => MenuScreen(
-          // Navigate to Town Screen when Play is pressed
           onPlay: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TownScreen(
-                  // Placeholder names until game data is implemented
-                  townMembers: const [
-                    'Town Member 1',
-                    'Town Member 2',
-                    'Town Member 3',
-                    'Town Member 4',
-                    'Town Member 5',
-                    'Town Member 6',
-                    'Town Member 7',
-                    'Town Member 8',
-                  ],
-
-                  // Temporary callbacks
-                  onMemberPressed: (name) {
-                    debugPrint('$name selected');
-                  },
-
-                  onEvidence: () {
-                    debugPrint('Evidence pressed');
-                  },
-
-                  onHelp: () {
-                    debugPrint('Help pressed');
-                  },
-                ),
-              ),
-            );
+            openTownScreen(context);
           },
 
           // Disabled until save functionality is implemented
@@ -76,4 +58,54 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
+}
+
+// Navigate from the main menu to the Town Screen
+void openTownScreen(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (townContext) => TownScreen(
+        townMembers: townMembers,
+
+        onMemberPressed: (name) {
+          debugPrint('$name selected');
+        },
+
+        // Open Evidence Screen when Evidence is pressed
+        onEvidence: () {
+          openEvidenceScreen(townContext);
+        },
+
+        onHelp: () {
+          debugPrint('Help pressed');
+        },
+      ),
+    ),
+  );
+}
+
+// Navigate from the Town Screen to the Evidence Screen
+void openEvidenceScreen(BuildContext context) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (evidenceContext) => EvidenceScreen(
+        townMembers: townMembers,
+
+        onMemberPressed: (name) {
+          debugPrint('Viewing evidence for $name');
+        },
+
+        // Return to Town Screen when Town is pressed
+        onTown: () {
+          Navigator.pop(evidenceContext);
+        },
+
+        onHelp: () {
+          debugPrint('Help pressed');
+        },
+      ),
+    ),
+  );
 }
