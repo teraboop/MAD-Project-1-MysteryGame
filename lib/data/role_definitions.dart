@@ -25,7 +25,7 @@ Role investigator = Role(
   id: 1,
   name: 'Investigator',
   alignment: Alignment.Good,
-  description: 'The investigator chooses two people at the beginning of the game and is told if there is an evil player among them.',
+  description: 'The investigator is given two people at the beginning of the game and is told if there is an evil player among them.',
   hasNightAction: true,
 );
 
@@ -33,7 +33,7 @@ Role seer = Role(
   id: 2,
   name: 'Seer',
   alignment: Alignment.Good,
-  description: 'The seer chooses one player each night and is told their alignment.',
+  description: 'The seer chooses one player and is told their alignment. Two uses.',
   hasNightAction: true,
 );
 
