@@ -172,3 +172,36 @@ const claimTemplates = [
     roleIds: {'hunter', 'possessed', 'saboteur', 'clown', 'siren'},
   ),
 ];
+
+const conversationTemplates = [
+  DialogueTemplate(
+    id:'giving_information',
+    kind: TemplateKind.description,
+    text: 'I\'m rather suspicious about {target}',
+    tones: {Tone.neutral},
+  ),
+  DialogueTemplate(
+    id: 'deny',
+    kind: TemplateKind.description,
+    text: 'I deny the accusation.',
+    tones: {Tone.neutral},
+  ),
+  DialogueTemplate(
+    id: 'agree',
+    kind: TemplateKind.description,
+    text: 'I agree with that statement.',
+    tones: {Tone.neutral},
+  ),
+  DialogueTemplate(
+    id: 'disagree',
+    kind: TemplateKind.description,
+    text: 'I disagree with that statement.',
+    tones: {Tone.neutral},
+  ),
+  DialogueTemplate(
+    id: 'uncertain',
+    kind: TemplateKind.description,
+    text: 'I am uncertain about that.',
+    tones: {Tone.neutral},
+  ),
+];
