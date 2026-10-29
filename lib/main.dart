@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'screens/menu.dart';
 import 'screens/town.dart';
 import 'screens/evidence.dart';
+import 'screens/help.dart';
 import 'screens/overlays/conversation.dart';
+import 'screens/widgets/game_nav_bar.dart';
 
 // Temporary town member names until the game engine is implemented
 const List<String> townMembers = [
@@ -42,7 +44,13 @@ class MyApp extends StatelessWidget {
       home: Builder(
         builder: (context) => MenuScreen(
           onPlay: () {
-            openTownScreen(context);
+            // Enter the game as a single route
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const GameShell(),
+              ),
+            );
           },
 
           // Disabled until save functionality is implemented
@@ -61,78 +69,117 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// Navigate from the main menu to the Town Screen
-void openTownScreen(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (townContext) => TownScreen(
-        townMembers: townMembers,
+// Manages navigation between the game's main screens
+class GameShell extends StatefulWidget {
+  const GameShell({super.key});
 
-
-onMemberPressed: (name) {
-  // Open the conversation overlay for the selected member
-  showDialog<void>(
-    context: townContext,
-    builder: (dialogContext) => ConversationDialog(
-      memberName: name,
-
-      // Temporary questions and responses
-      choices: const [
-        ConversationChoice(
-          question: 'Where were you last night?',
-          response: 'I was at home all evening.',
-        ),
-
-        ConversationChoice(
-          question: 'Who do you suspect?',
-          response: 'I do not trust the innkeeper.',
-        ),
-
-        ConversationChoice(
-          question: 'What do you know about the demon?',
-          response: 'Only that it is hiding among us.',
-        ),
-      ],
-    ),
-  );
-},
-
-
-        // Open Evidence Screen when Evidence is pressed
-        onEvidence: () {
-          openEvidenceScreen(townContext);
-        },
-
-        onHelp: () {
-          debugPrint('Help pressed');
-        },
-      ),
-    ),
-  );
+  @override
+  State<GameShell> createState() => _GameShellState();
 }
 
-// Navigate from the Town Screen to the Evidence Screen
-void openEvidenceScreen(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (evidenceContext) => EvidenceScreen(
-        townMembers: townMembers,
+class _GameShellState extends State<GameShell> {
+  // Currently selected game tab
+  GameNavTab selectedTab = GameNavTab.town;
 
-        onMemberPressed: (name) {
-          debugPrint('Viewing evidence for $name');
-        },
+  // Switch screens without adding routes to the navigator
+  void selectTab(GameNavTab tab) {
+    setState(() {
+      selectedTab = tab;
+    });
+  }
 
-        // Return to Town Screen when Town is pressed
-        onTown: () {
-          Navigator.pop(evidenceContext);
-        },
+  // Open the conversation overlay for a town member
+  void openConversation(String name) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => ConversationDialog(
+        memberName: name,
 
-        onHelp: () {
-          debugPrint('Help pressed');
-        },
+        // Temporary questions and responses
+        choices: const [
+          ConversationChoice(
+            question: 'Where were you last night?',
+            response: 'I was at home all evening.',
+          ),
+
+          ConversationChoice(
+            question: 'Who do you suspect?',
+            response: 'I do not trust the innkeeper.',
+          ),
+
+          ConversationChoice(
+            question: 'What do you know about the demon?',
+            response: 'Only that it is hiding among us.',
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
+
+  // Temporary placeholder for town member evidence
+  void openMemberEvidence(String name) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(name),
+        content: const Text(
+          'Evidence for this town member will appear here.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Keep all three screens inside a single game route
+    return IndexedStack(
+      index: selectedTab.index,
+      children: [
+        // Town Screen
+        TownScreen(
+          townMembers: townMembers,
+          onMemberPressed: openConversation,
+
+          onEvidence: () {
+            selectTab(GameNavTab.evidence);
+          },
+
+          onHelp: () {
+            selectTab(GameNavTab.help);
+          },
+        ),
+
+        // Evidence Screen
+        EvidenceScreen(
+          townMembers: townMembers,
+          onMemberPressed: openMemberEvidence,
+
+          onTown: () {
+            selectTab(GameNavTab.town);
+          },
+
+          onHelp: () {
+            selectTab(GameNavTab.help);
+          },
+        ),
+
+        // Help Screen
+        HelpScreen(
+          onTown: () {
+            selectTab(GameNavTab.town);
+          },
+
+          onEvidence: () {
+            selectTab(GameNavTab.evidence);
+          },
+        ),
+      ],
+    );
+  }
 }
