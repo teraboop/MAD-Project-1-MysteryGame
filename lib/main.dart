@@ -6,6 +6,7 @@ import 'screens/evidence.dart';
 import 'screens/help.dart';
 import 'screens/overlays/conversation.dart';
 import 'screens/widgets/game_nav_bar.dart';
+import 'screens/overlays/how_to_play.dart';
 
 // Temporary town member names until the game engine is implemented
 const List<String> townMembers = [
@@ -56,8 +57,11 @@ class MyApp extends StatelessWidget {
           // Disabled until save functionality is implemented
           onContinue: null,
 
-          onOptions: () {
-            debugPrint('Options pressed');
+          onHowToPlay: () {
+            showDialog<void>(
+              context: context,
+              builder: (dialogContext) => const HowToPlayDialog(),
+            );
           },
 
           onCredits: () {

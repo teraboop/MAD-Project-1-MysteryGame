@@ -6,7 +6,7 @@ class MenuScreen extends StatelessWidget {
   // Functions supplied by the parent to handle menu actions
   final VoidCallback onPlay;
   final VoidCallback? onContinue;
-  final VoidCallback onOptions;
+  final VoidCallback onHowToPlay;
   final VoidCallback onCredits;
 
   // Constructor
@@ -14,7 +14,7 @@ class MenuScreen extends StatelessWidget {
     super.key,
     required this.onPlay,
     this.onContinue,
-    required this.onOptions,
+    required this.onHowToPlay,
     required this.onCredits,
   });
 
@@ -64,10 +64,10 @@ class MenuScreen extends StatelessWidget {
 
               // Open options
               GameButton(
-                text: 'Options',
+                text: 'How to Play',
                 width: 230,
                 height: 55,
-                onPressed: onOptions,
+                onPressed: onHowToPlay,
               ),
 
               const SizedBox(height: 12),
