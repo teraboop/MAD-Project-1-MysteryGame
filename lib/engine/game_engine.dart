@@ -11,4 +11,37 @@ class GameEngine {
     final rolePool = buildRolePool(rng);
     gameState.characters = assignRoles(Roster, rolePool, rng);
   }
+
+  void talkTo(int characterID) {
+    final character = gameState.characters.firstWhere((c) => c.id == characterID, orElse: () => throw Exception('Character not found'));
+  }
+
+  void advancePhase() {
+    switch (gameState.currentPhase) {
+      case DayPhase.morning:
+        gameState.currentPhase = DayPhase.conversations;
+        break;
+      case DayPhase.conversations:
+        gameState.currentPhase = DayPhase.voting;
+        break;
+      case DayPhase.voting:
+        gameState.currentPhase = DayPhase.gameOver;
+        break;
+      case DayPhase.gameOver:
+        break;
+      default:
+        gameState.currentPhase = DayPhase.morning;
+    }
+  }
+
+  void castVote(int characterID, int targetID) {
+    final character = gameState.characters.firstWhere((c) => c.id == characterID, orElse: () => throw Exception('Character not found'));
+    final target = gameState.characters.firstWhere((c) => c.id == targetID, orElse: () => throw Exception('Target not found'));
+    // Implement vote logic here
+  }
+
+  void endGame() {
+    gameState.currentPhase = DayPhase.gameOver;
+  }
+
 }

@@ -1,6 +1,6 @@
 import 'character.dart';
 
-enum DayPhase {morning, conversations, voting, gameOver};
+enum DayPhase {morning, conversations, voting, gameOver}
 class GameState {
   
   DayPhase? currentPhase;
