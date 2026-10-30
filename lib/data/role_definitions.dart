@@ -25,7 +25,7 @@ Role investigator = Role(
   id: 1,
   name: 'Investigator',
   alignment: Alignment.Good,
-  description: 'The investigator chooses two people at the beginning of the game and is told if there is an evil player among them.',
+  description: 'The investigator is given two people at the beginning of the game and is told if there is an evil player among them.',
   hasNightAction: true,
 );
 
@@ -33,7 +33,7 @@ Role seer = Role(
   id: 2,
   name: 'Seer',
   alignment: Alignment.Good,
-  description: 'The seer chooses one player each night and is told their alignment.',
+  description: 'The seer chooses one player and is told their alignment. Two uses.',
   hasNightAction: true,
 );
 
@@ -61,45 +61,51 @@ Role mortician = Role(
   hasNightAction: true,
 );
 
+Role afterlifer = Role(
+  id: 10,
+  name: 'Afterlifer',
+  alignment: Alignment.Good,
+  description: 'When this player dies, they choose another player and reveal their role.',
+  hasNightAction: false,
+);
+
+Role historian = Role(
+  id: 11,
+  name: 'Historian',
+  alignment: Alignment.Good,
+  description: 'The historian can record events each night and review them later.',
+  hasNightAction: true,
+);
+
 Role hunter = Role(
   id: 6,
   name: 'Hunter',
-  alignment: Alignment.Neutral,
+  alignment: Alignment.Good,
   description: 'The hunter has the ability to shoot someone once per game.',
   hasNightAction: true,
 );
 
-Role clown = Role(
-  id: 7,
-  name: 'Clown',
-  alignment: Alignment.Neutral,
-  description: 'The clown believes he is a different role, and will have an illusion of being that role, and give false information to others accordingly.',
-  hasNightAction: false,
-);
-
 Role siren = Role(
-  id: 8,
+  id: 7,
   name: 'Siren',
   alignment: Alignment.Neutral,
-  description: 'The siren can charm one player each night, forcing them to follow her instructions.',
+  description: 'The siren can charm one player each night, forcing them to follow their instructions.',
   hasNightAction: true,
 );
 
 Role possessed = Role(
-  id: 9,
+  id: 8,
   name: 'Possessed',
   alignment: Alignment.Evil,
   description: 'The possessed kills a non-evil player each night.',
-  hasNightAction: false,
+  hasNightAction: true,
 );
 
 Role saboteur = Role(
-  id: 10,
+  id: 9,
   name: 'Saboteur',
   alignment: Alignment.Evil,
   description: 'The saboteur can choose one player each night which causes their night action to fail or give false information.',
   hasNightAction: true,
 );
-
-
 
