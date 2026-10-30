@@ -1,4 +1,6 @@
 import '../data/role_definitions.dart';
+import '../engine/role_pool_builder.dart';
+import 'dart:math';
 
 class CharacterProfile { 
   final String name;
@@ -43,6 +45,13 @@ const Roster = [
   CharacterProfile(name: 'Zane'),
 ];
 
+
 List<Character> assignRoles(List<CharacterProfile> roster, List<Role>rolePool, Random rng) {
-  assert(roster.length == 9);
+  final cast = ([...roster]..shuffle(rng)).take(rolePool.length).toList();
+  final roles = [...rolePool]..shuffle(rng);
+  return [
+    for (var i = 0; i < cast.length; i++)
+      Character(name: cast[i].name, role: roles[i]),
+  ];
+}
   
