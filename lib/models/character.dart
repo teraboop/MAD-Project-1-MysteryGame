@@ -13,6 +13,7 @@ class Character {
   final Role role;
   final int id;
   bool isAlive;
+  late bool isHuman;
 
    Character({required this.name, required this.role, required this.id, this.isAlive = true});
 }

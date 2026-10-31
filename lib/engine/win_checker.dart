@@ -6,7 +6,7 @@ void checkWinCondition(GameState gameState) {
     if (character.isAlive) {
       aliveCharacters++;
     }
-    if(!character.isAlive && character.role.name == 'possessed') {
+    if(!character.isAlive && character.role.name == 'Possessed') {
       print('Possessed character is dead.');
       print('Good win condition met.');
       gameState.goodWin();
@@ -14,7 +14,7 @@ void checkWinCondition(GameState gameState) {
     }
   }
   for (var character in gameState.characters) {
-    if ((character.isAlive && character.role.name == 'possessed') && aliveCharacters < 3) {
+    if ((character.isAlive && character.role.name == 'Possessed') && aliveCharacters < 3) {
       print('Possessed character is alive but less than 3 characters remain.');
       print('Evil win condition met.');
       gameState.evilWin();

@@ -1,13 +1,16 @@
 import 'character.dart';
+import 'conversation.dart';
 
-enum DayPhase {morning, conversations, voting, gameOver}
+enum DayPhase {morning, conversations, voting, night, gameOver}
 class GameState {
   
-  DayPhase? currentPhase;
-  late int conversationsLeft;
+  DayPhase currentPhase;
+  int conversationsLeft = 3;
   List<Character> characters = [];
   List publicEvents = [];
-  GameState({this.currentPhase, this.conversationsLeft = 3});
+  List<Conversation> conversationLog = [];
+  int day = 1;
+  GameState({this.currentPhase = DayPhase.morning});
 
   void goodWin() {
     currentPhase = DayPhase.gameOver;
@@ -20,4 +23,7 @@ class GameState {
     print('Evil win condition met.');
     //Move to loss screen or trigger loss sequence
   }
+
+
+
 }
