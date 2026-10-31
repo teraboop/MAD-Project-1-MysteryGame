@@ -1,20 +1,21 @@
 import '../models/game_state.dart';
 import '../models/character.dart';
-import '../data/scenarios.dart';
+import '../data/scenarios.dart' as data;
 import 'win_checker.dart';
 import 'dart:math';
 class GameEngine {
   GameState gameState = GameState();
-  Scenario? scenario;
+  data.Scenario? scenario;
   final Random rng = Random();
-
-  void newGame(Scenario s) {
-    scenario = s;
+  GameEngine({data.Scenario? scenario}) : scenario = scenario ?? data.scenario;
+  void newGame() {
+    final scenario = this.scenario;
+    if (scenario == null) throw StateError('No scenario provided');
     //final rolePool = buildRolePool(rng);
     //gameState.characters = assignRoles(Roster, rolePool, rng);
     gameState = GameState();
     final List<Character> characterArray = [];
-    for (var c in s.cast) {
+    for (var c in scenario!.cast) {
       characterArray.add(Character(
         id: c.id,
         name: c.name,
@@ -24,7 +25,7 @@ class GameEngine {
       ));
     }
     gameState.characters = characterArray;
-    gameState.publicEvents.add(s.intro);
+    gameState.publicEvents.add(scenario!.intro);
   }
 
   Character _find(int id) => gameState.characters.firstWhere(
@@ -32,7 +33,7 @@ class GameEngine {
     orElse: () => throw ArgumentError('Character not found')
   );
 
-  ScriptedLine talkTo(int characterID) {
+  data.ScriptedLine talkTo(int characterID) {
     if (gameState.currentPhase != DayPhase.conversations) {
       throw StateError('Cannot talk to characters outside of conversations phase');
     }
@@ -46,7 +47,7 @@ class GameEngine {
     if (character.isHuman){
       throw StateError('Why are you talking to yourself?');
     }
-    final scriptedLine = scenario!.getConversation(gameState, character.id);
+    final data.ScriptedLine scriptedLine = scenario!.getConversation(gameState, character.id);
     gameState.conversationLog.add(scriptedLine);
     return scriptedLine;
   }
@@ -60,7 +61,7 @@ class GameEngine {
         gameState.currentPhase = DayPhase.voting;
         break;
       case DayPhase.voting:
-        gameState.currentPhase = DayPhase.gameOver;
+        gameState.currentPhase = DayPhase.night;
         break;
       case DayPhase.night:
         gameState.day++;
@@ -103,7 +104,7 @@ class GameEngine {
   void resolveNightActions() {
   final night = scenario!.nights.firstWhere(
     (n) => n.day == gameState.day,
-    orElse: () => NightEvent(day: gameState.day),
+    orElse: () => data.NightEvent(day: gameState.day),
   );
 
   int? victim = night.victimId;

@@ -56,6 +56,8 @@ class Scenario {
       orElse: () => throw StateError('No conversation available for this character today'),
     );
   }
+
+  int getCharacter(int id) => cast.firstWhere((c) => c.id == id).id;
 }
 
 const int youId = 0;
