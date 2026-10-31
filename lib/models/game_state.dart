@@ -1,5 +1,6 @@
 import 'character.dart';
 import 'conversation.dart';
+import '../data/scenarios.dart';
 
 enum DayPhase {morning, conversations, voting, night, gameOver}
 class GameState {
@@ -8,7 +9,7 @@ class GameState {
   int conversationsLeft = 3;
   List<Character> characters = [];
   List publicEvents = [];
-  List<Conversation> conversationLog = [];
+  List<ScriptedLine> conversationLog = [];
   int day = 1;
   GameState({this.currentPhase = DayPhase.morning});
 

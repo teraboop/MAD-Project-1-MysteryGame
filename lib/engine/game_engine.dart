@@ -3,14 +3,26 @@ import '../data/role_definitions.dart';
 import '../engine/role_pool_builder.dart';
 import '../models/character.dart';
 import '../models/conversation.dart';
+import '../data/scenarios.dart';
 import 'dart:math';
 class GameEngine {
   GameState gameState = GameState();
   final Random rng = Random();
 
-  void newGame() {
-    final rolePool = buildRolePool(rng);
-    gameState.characters = assignRoles(Roster, rolePool, rng);
+  void newGame(Scenario s, GameState gameState) {
+    //final rolePool = buildRolePool(rng);
+    //gameState.characters = assignRoles(Roster, rolePool, rng);
+    final List<Character> characterArray = [];
+    for (var c in s.cast) {
+      characterArray.add(Character(
+        id: c.id,
+        name: c.name,
+        role: c.role,
+        isHuman: c.isHuman,
+        isAlive: true,
+      ));
+    }
+    gameState.characters = characterArray;
   }
 
   Character _find(int id) => gameState.characters.firstWhere(
@@ -18,7 +30,7 @@ class GameEngine {
     orElse: () => throw ArgumentError('Character not found')
   );
 
-  Conversation talkTo(int characterID) {
+  ScriptedLine talkTo(int characterID) {
     if (gameState.currentPhase != DayPhase.conversations) {
       throw StateError('Cannot talk to characters outside of conversations phase');
     }
@@ -32,10 +44,9 @@ class GameEngine {
     if (character.isHuman){
       throw StateError('Why are you talking to yourself?');
     }
-    gameState.conversationsLeft--;
-    final conversation = _buildConversation(character);
-    gameState.conversationLog.add(conversation);
-    return conversation;
+    final scriptedLine = scenario.getConversation(gameState, character.id);
+    gameState.conversationLog.add(scriptedLine);
+    return scriptedLine;
   }
 
   void advancePhase() {
