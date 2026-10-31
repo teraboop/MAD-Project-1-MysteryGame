@@ -9,7 +9,8 @@ class ScriptedLine {
   final String text;
   final Clue? clue;
   final Condition? when; // null = always applies
-  const ScriptedLine(this.day, this.text, {this.clue, this.when});
+  final Map<int, int> suspicion; // characterId -> points (+ more suspicious, - less)
+  const ScriptedLine(this.day, this.text, {this.clue, this.when, this.suspicion = const {}});
 }
 
 class CharacterScript {
@@ -17,12 +18,14 @@ class CharacterScript {
   final String name;
   final Role role;
   final bool isHuman;
+  final String? claimedRole; // what they say they are; defaults to their real role
   final List<ScriptedLine> lines;
   const CharacterScript({
     required this.id,
     required this.name,
     required this.role,
     this.isHuman = false,
+    this.claimedRole,
     this.lines = const [],
   });
 }
@@ -88,22 +91,26 @@ final scenario = Scenario(
     CharacterScript(id: youId, name: 'You', role: investigator, isHuman: true),
 
     // Saboteur, claims to be the Seer.
-    CharacterScript(id: aliceId, name: 'Alice', role: saboteur, lines: [
-      ScriptedLine(1, 'As the Seer, I had a vision that Charlie is evil.'),
-      ScriptedLine(2, 'I had no visions last night. Perhaps the spirits are tired of us.'),
+    CharacterScript(id: aliceId, name: 'Alice', role: saboteur, claimedRole: 'Seer', lines: [
+      ScriptedLine(1, 'As the Seer, I had a vision that Charlie is evil.', suspicion: {aliceId: 1}),
+      ScriptedLine(2, 'I had no visions last night. Perhaps the spirits are tired of us.', suspicion: {aliceId: 1}),
       ScriptedLine(
         3,
         'Bob is gone, and still the killing goes on. I had a vision last '
         'night: Jerry is good. Whoever is doing this, it is not him.',
         when: (s) => _dead(s, bobId),
+        suspicion: {aliceId: 1, jerryId: 1},
       ),
-      ScriptedLine(3, 'I had a vision that Jerry is good. Trust that, if you trust nothing else.'),
+      ScriptedLine(3, 'I had a vision that Jerry is good. Trust that, if you trust nothing else.',
+          suspicion: {aliceId: 1, jerryId: 1}),
     ]),
 
     // Good, hindered on night 1.
     CharacterScript(id: bobId, name: 'Bob', role: physician, lines: [
-      ScriptedLine(1, "Diana was gravely wounded last night. I'm so glad I was around to save her."),
-      ScriptedLine(2, "I tried my hardest to save Frank, but something came over me. I don't understand why I couldn't."),
+      ScriptedLine(1, "Diana was gravely wounded last night. I'm so glad I was around to save her.",
+          suspicion: {bobId: 1}),
+      ScriptedLine(2, "I tried my hardest to save Frank, but something came over me. I don't understand why I couldn't.",
+          suspicion: {bobId: -1}),
       ScriptedLine(
         3,
         'Alice is gone, so my protection should have held. I guarded Diana '
@@ -134,6 +141,7 @@ final scenario = Scenario(
           text: "Charlie's vision: Bob's ability was tampered with on night 1.",
           strength: ClueStrength.abilityText,
         ),
+        suspicion: {bobId: -2, aliceId: 1},
       ),
     ]),
 
@@ -161,19 +169,23 @@ final scenario = Scenario(
     ]),
 
     // Possessed, the killer.
-    CharacterScript(id: jerryId, name: 'Jerry', role: possessed, lines: [
-      ScriptedLine(1, 'That man was gutted like an animal. Someone here executed the technique flawlessly.'),
-      ScriptedLine(2, "Another dead, and seemingly in the same manner. I swear I'll find who did this and make them pay."),
+    CharacterScript(id: jerryId, name: 'Jerry', role: possessed, claimedRole: 'Hunter', lines: [
+      ScriptedLine(1, 'That man was gutted like an animal. Someone here executed the technique flawlessly.',
+          suspicion: {jerryId: 1}),
+      ScriptedLine(2, "Another dead, and seemingly in the same manner. I swear I'll find who did this and make them pay.",
+          suspicion: {jerryId: 1}),
       ScriptedLine(
         3,
         'The knife keeps falling no matter who we put down. Diana has stayed '
         'calm through all of it. Ask yourself why.',
         when: (s) => _dead(s, bobId),
+        suspicion: {jerryId: 2},
       ),
       ScriptedLine(
         3,
         'Another gone, same wounds. The Physician has failed us twice now. '
         "I'd ask why Bob is always nowhere when it matters.",
+        suspicion: {jerryId: 2},
       ),
     ]),
 

@@ -12,9 +12,8 @@ void main() {
     await tester.tap(find.text('Close'));
     await tester.pumpAndSettle();
 
-    // Start the day, then talk to Alice
-    await tester.tap(find.text('Start the day'));
-    await tester.pumpAndSettle();
+    // Start the day is automatic after closing the intro; claims are shown
+    expect(find.text('Seer'), findsOneWidget);
     await tester.tap(find.text('Alice'));
     await tester.pumpAndSettle();
     expect(find.textContaining('As the Seer'), findsOneWidget);
@@ -36,5 +35,27 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Justice'), findsOneWidget);
     expect(find.text('Play again'), findsOneWidget);
+  });
+
+  testWidgets('execution result, then night report, then conversations', (tester) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.tap(find.text('Play'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Go to the vote'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Alice'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Execute'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Alice was executed'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Frank was killed by the Possessed'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    expect(find.text('Go to the vote'), findsOneWidget);
+    expect(find.textContaining('Day 2'), findsOneWidget);
   });
 }

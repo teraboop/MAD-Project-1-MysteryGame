@@ -51,7 +51,7 @@ class TownMemberRow extends StatelessWidget {
 
             // Visual placeholder for the member's token
             Container(
-              width: 70,
+              width: 100,
               height: 40,
               alignment: Alignment.center,
               decoration: BoxDecoration(
