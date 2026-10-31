@@ -32,9 +32,6 @@ class GameEngine {
     if (gameState.currentPhase != DayPhase.conversations) {
       throw StateError('Cannot talk to characters outside of conversations phase');
     }
-    if (gameState.conversationsLeft <= 0) {
-      throw StateError('No conversations left for today');
-    }
     final character = _find(characterID);
     if (!character.isAlive) {
       throw StateError('Character is not alive');
@@ -45,9 +42,7 @@ class GameEngine {
     final line = scenario.getConversation(gameState, character.id);
     final entry = 'Day ${gameState.day}: ${line.text}';
     final heardBefore = gameState.heard[character.id]?.contains(entry) ?? false;
-    // Re-opening someone you already heard from today is free.
     if (!heardBefore) {
-      gameState.conversationsLeft--;
       gameState.heard.putIfAbsent(character.id, () => []).add(entry);
       gameState.conversationLog.add(line);
     }
@@ -68,7 +63,6 @@ class GameEngine {
         resolveNightActions();
         if (gameState.currentPhase == DayPhase.gameOver) break;
         gameState.day++;
-        gameState.conversationsLeft = 3;
         gameState.currentPhase = DayPhase.morning;
         break;
       case DayPhase.gameOver:
@@ -113,7 +107,7 @@ class GameEngine {
 
     if (victim != null && _find(victim).isAlive) {
       killCharacter(victim);
-      gameState.publicEvents.add('${_find(victim).name} was found dead.');
+      gameState.publicEvents.add('${_find(victim).name} was killed by the Possessed.');
     } else {
       gameState.publicEvents.add('The night passed quietly.');
     }

@@ -17,10 +17,12 @@ class TownScreen extends StatelessWidget {
   final String statusText;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final String Function(Character)? claimFor;
 
   // Constructor
   const TownScreen({
     super.key,
+    this.claimFor,
     required this.members,
     required this.onMemberPressed,
     required this.onEvidence,
@@ -61,7 +63,7 @@ class TownScreen extends StatelessWidget {
 
                   return TownMemberRow(
                     memberName: m.name,
-                    tokenLabel: m.isAlive ? '?' : 'Dead',
+                    tokenLabel: m.isAlive ? (claimFor?.call(m) ?? '?') : 'Dead',
                     onMemberPressed: () {
                       onMemberPressed(m);
                     },

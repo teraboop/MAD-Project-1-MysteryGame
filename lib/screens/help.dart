@@ -1,15 +1,20 @@
 
 import 'package:flutter/material.dart';
 import 'widgets/game_nav_bar.dart';
+import 'widgets/game_button.dart';
 
 class HelpScreen extends StatelessWidget {
   final VoidCallback onTown;
   final VoidCallback onEvidence;
+  final List<String> messages;
+  final VoidCallback onAsk;
 
   const HelpScreen({
     super.key,
     required this.onTown,
     required this.onEvidence,
+    this.messages = const [],
+    required this.onAsk,
   });
 
   @override
@@ -55,38 +60,24 @@ class HelpScreen extends StatelessWidget {
 
                           const SizedBox(height: 20),
 
-                          // Placeholder chatbot message
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
+                          // Assistant messages
+                          for (final m in messages)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(m),
                             ),
-                            child: const Text(
-                              'Welcome! Eventually, I will help '
-                              'you review what you have learned '
-                              'about the other town members.\n\n'
-                              'You will be able to ask questions '
-                              'about suspects, conversations, '
-                              'and evidence.\n\n'
-                              'Chat functionality coming soon!',
-                            ),
-                          ),
                         ],
                       ),
                     ),
 
-                    // Future chatbot input field
-                    const TextField(
-                      enabled: false,
-                      decoration: InputDecoration(
-                        hintText: 'Ask about a town member...',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.send),
-                      ),
-                    ),
+                    GameButton(text: 'Summarize and advise me', onPressed: onAsk),
                   ],
                 ),
               ),

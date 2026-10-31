@@ -36,20 +36,17 @@ void main() {
     expect(e.gameState.winner, Alignment.Evil);
   });
 
-  test('night 1 kills Frank', () {
+  test('night 1 kills Frank with a descriptive report', () {
     playDay(e, aliceId);
     expect(e.gameState.characters.firstWhere((c) => c.id == frankId).isAlive, isFalse);
+    expect(e.gameState.publicEvents, contains('Frank was killed by the Possessed.'));
   });
 
-  test('three conversations per day, repeats are free', () {
+  test('conversations are unlimited and repeats are fine', () {
     e.advancePhase(); // morning -> conversations
-    e.talkTo(aliceId);
-    e.talkTo(aliceId);
-    expect(e.gameState.conversationsLeft, 2);
-    e.talkTo(bobId);
-    e.talkTo(charlieId);
-    expect(e.gameState.conversationsLeft, 0);
-    expect(() => e.talkTo(dianaId), throwsStateError);
+    for (final id in [aliceId, aliceId, bobId, charlieId, dianaId, jerryId]) {
+      e.talkTo(id);
+    }
   });
 
   test('cannot talk to the dead or to yourself', () {

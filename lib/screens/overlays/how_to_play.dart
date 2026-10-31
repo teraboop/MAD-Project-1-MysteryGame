@@ -27,9 +27,22 @@ class HowToPlayDialog extends StatelessWidget {
 
           child: const SingleChildScrollView(
             child: Text(
-              'Game instructions will be added here.\n\n'
-              'This section will explain the rules, '
-              'objectives, and mechanics of Bloody Mystery.',
+              'You are the Investigator. A murderer is hiding in town, '
+              'and you must find and execute the Possessed before the '
+              'town is wiped out.\n\n'
+              'Each day:\n'
+              '1. Morning: you are told what happened overnight.\n'
+              '2. Conversations: tap any living townsperson to hear what '
+              'they have to say. You can talk to anyone as often as you '
+              'like. Everything you hear is saved under the Evidence tab.\n'
+              '3. Vote: when you are ready, press "Go to the vote" and '
+              'choose one person to execute.\n'
+              '4. Night: the killer strikes again, and the next morning '
+              'begins.\n\n'
+              'Watch the role tag beside each name, but remember that '
+              'evil characters can lie about what they are.\n\n'
+              'Win by executing the Possessed. You lose if the Possessed '
+              'is still alive when fewer than 3 people remain.',
               style: TextStyle(fontSize: 16),
             ),
           ),

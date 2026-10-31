@@ -11,6 +11,7 @@ import 'screens/overlays/conversation.dart';
 import 'screens/widgets/game_nav_bar.dart';
 import 'screens/overlays/how_to_play.dart';
 import 'engine/game_engine.dart';
+import 'engine/advisor.dart';
 import 'database/game_persistence.dart';
 import 'models/character.dart';
 import 'models/game_state.dart';
@@ -92,13 +93,28 @@ class _GameShellState extends State<GameShell> {
   late final GameEngine engine;
   final GamePersistence _store = GamePersistence();
   int _shownEvents = 0;
+  final List<String> _advice = [];
 
   @override
   void initState() {
     super.initState();
     engine = GameEngine()..newGame();
     _store.startNewGame(engine.scenario);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showNewEvents());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startDay());
+  }
+
+  // Shows the morning report, then moves from morning to conversations.
+  Future<void> _startDay() async {
+    await _showNewEvents();
+    if (!mounted) return;
+    if (engine.gameState.currentPhase == DayPhase.morning) engine.advancePhase();
+    setState(() {});
+    _store.saveProgress(engine.gameState);
+  }
+
+  String _claimFor(Character c) {
+    final s = engine.scenario.cast.firstWhere((m) => m.id == c.id);
+    return s.claimedRole ?? s.role.name;
   }
 
   List<Character> get _npcs =>
@@ -113,7 +129,7 @@ class _GameShellState extends State<GameShell> {
   String? get _actionLabel {
     final g = engine.gameState;
     switch (g.currentPhase) {
-      case DayPhase.morning:       return 'Start the day';
+      case DayPhase.morning:       return null;
       case DayPhase.conversations: return 'Go to the vote';
       case DayPhase.voting:        return null;
       default:                     return null;
@@ -122,14 +138,13 @@ class _GameShellState extends State<GameShell> {
 
   void _advance() {
     engine.advancePhase();
-    _afterAction();
+    setState(() {});
   }
 
   String get _status {
     final g = engine.gameState;
     final hint = switch (g.currentPhase) {
-      DayPhase.morning => 'Start the day when you are ready',
-      DayPhase.conversations => 'Talk to someone · Conversations left: ${g.conversationsLeft}',
+      DayPhase.conversations => 'Talk to anyone as often as you like',
       DayPhase.voting => 'Tap someone to execute them',
       _ => '',
     };
@@ -146,9 +161,9 @@ class _GameShellState extends State<GameShell> {
 
     if (g.currentPhase == DayPhase.conversations) {
       try {
-        final before = g.conversationsLeft;
+        final before = g.heard[c.id]?.length ?? 0;
         final line = engine.talkTo(c.id);
-        if (g.conversationsLeft < before) {
+        if ((g.heard[c.id]?.length ?? 0) > before) {
           _store.recordHeard(c.id, g.day, line);
           _store.saveProgress(g);
         }
@@ -181,8 +196,14 @@ class _GameShellState extends State<GameShell> {
     );
     if (ok != true) return;
     engine.executeCharacter(c.id);
-    if (engine.gameState.currentPhase != DayPhase.gameOver) engine.advancePhase(); // run the night
-    _afterAction();
+    // Show the execution result first
+    await _afterAction();
+    if (!mounted || engine.gameState.currentPhase != DayPhase.night) return;
+    // Then run the night and show its results as the morning report
+    engine.advancePhase();
+    await _afterAction();
+    if (!mounted || engine.gameState.currentPhase == DayPhase.gameOver) return;
+    await _startDay();
   }
 
   // Evidence for a town member, read back from the database
@@ -250,9 +271,10 @@ class _GameShellState extends State<GameShell> {
   void _restart() {
     engine.newGame();
     _shownEvents = 0;
+    _advice.clear();
     _store.startNewGame(engine.scenario);
     setState(() {});
-    _showNewEvents();
+    _startDay();
   }
 
   @override
@@ -266,6 +288,7 @@ class _GameShellState extends State<GameShell> {
           members: _npcs,
           onMemberPressed: onMemberPressed,
           statusText: _status,
+          claimFor: _claimFor,
           actionLabel: _actionLabel,
           onAction: _advance,
           onEvidence: () => selectTab(GameNavTab.evidence),
@@ -288,6 +311,8 @@ class _GameShellState extends State<GameShell> {
 
         // Help Screen
         HelpScreen(
+          messages: _advice,
+          onAsk: () => setState(() => _advice.add(advise(engine.gameState))),
           onTown: () {
             selectTab(GameNavTab.town);
           },
