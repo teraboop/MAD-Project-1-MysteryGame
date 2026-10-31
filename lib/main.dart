@@ -7,18 +7,11 @@ import 'screens/help.dart';
 import 'screens/overlays/conversation.dart';
 import 'screens/widgets/game_nav_bar.dart';
 import 'screens/overlays/how_to_play.dart';
+import 'engine/game_engine.dart';
+import 'models/character.dart';
+import 'models/game_state.dart';
+import 'data/role_definitions.dart' as roles;   // prefix: Alignment clashes with Flutter's
 
-// Temporary town member names until the game engine is implemented
-const List<String> townMembers = [
-  'Town Member 1',
-  'Town Member 2',
-  'Town Member 3',
-  'Town Member 4',
-  'Town Member 5',
-  'Town Member 6',
-  'Town Member 7',
-  'Town Member 8',
-];
 
 void main() {
   runApp(const MyApp());
@@ -85,6 +78,18 @@ class _GameShellState extends State<GameShell> {
   // Currently selected game tab
   GameNavTab selectedTab = GameNavTab.town;
 
+  late final GameEngine engine;
+  int _shownEvents = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    engine = GameEngine()..newGame();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showNewEvents());
+  }
+
+  List<Character> get _npcs =>
+      engine.gameState.characters.where((c) => !c.isHuman).toList();
   // Switch screens without adding routes to the navigator
   void selectTab(GameNavTab tab) {
     setState(() {
@@ -139,6 +144,33 @@ class _GameShellState extends State<GameShell> {
     );
   }
 
+  void _showText(String title, String text) {
+    showDialog<void>(
+      context: context,
+      builder: (_) => ConversationDialog(memberName: title, text: text),
+    );
+  }
+
+  // Shows anything added to publicEvents since the last call (intro, deaths).
+  void _showNewEvents() {
+    final events = engine.gameState.publicEvents;
+    if (events.length > _shownEvents) {
+      _showText('Morning', events.sublist(_shownEvents).join('\n\n'));
+      _shownEvents = events.length;
+    }
+  }
+
+  void _afterAction() {
+    setState(() {});
+    _showNewEvents();
+    if (engine.gameState.currentPhase == DayPhase.gameOver) _showEnding();
+  }
+
+  void _showEnding() {
+    final good = engine.gameState.winner == roles.Alignment.Good;
+    _showText(good ? 'Justice' : 'Defeat', good ? goodEnding : evilEnding);
+  }
+
   @override
   Widget build(BuildContext context) {
     // Keep all three screens inside a single game route
@@ -147,7 +179,7 @@ class _GameShellState extends State<GameShell> {
       children: [
         // Town Screen
         TownScreen(
-          townMembers: townMembers,
+          members: _npcs,
           onMemberPressed: openConversation,
 
           onEvidence: () {
@@ -161,7 +193,7 @@ class _GameShellState extends State<GameShell> {
 
         // Evidence Screen
         EvidenceScreen(
-          townMembers: townMembers,
+          members: _npcs,
           onMemberPressed: openMemberEvidence,
 
           onTown: () {
