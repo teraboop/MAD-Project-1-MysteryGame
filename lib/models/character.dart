@@ -11,9 +11,11 @@ class CharacterProfile {
 class Character {
   final String name;
   final Role role;
+  final int id;
   bool isAlive;
+  bool isHuman;
 
-   Character({required this.name, required this.role, this.isAlive = true});
+   Character({required this.name, required this.role, required this.id, this.isAlive = true, this.isHuman = false});
 }
 
 const Roster = [
@@ -51,7 +53,7 @@ List<Character> assignRoles(List<CharacterProfile> roster, List<Role>rolePool, R
   final roles = [...rolePool]..shuffle(rng);
   return [
     for (var i = 0; i < cast.length; i++)
-      Character(name: cast[i].name, role: roles[i]),
+      Character(name: cast[i].name, role: roles[i], id: i),
   ];
 }
   
