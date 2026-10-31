@@ -1,5 +1,4 @@
 import '../data/role_definitions.dart';
-import '../engine/role_pool_builder.dart';
 import 'dart:math';
 
 class CharacterProfile { 

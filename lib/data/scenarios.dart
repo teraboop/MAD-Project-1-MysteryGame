@@ -1,8 +1,6 @@
 import 'role_definitions.dart';
 import '../models/conversation.dart';
 import '../models/game_state.dart';
-import '../models/character.dart';
-import '../engine/game_engine.dart';
 
 typedef Condition = bool Function(GameState s);
 
@@ -53,7 +51,10 @@ class Scenario {
     final day = g.day;
     return script.lines.firstWhere(
       (line) => line.day == day && (line.when == null || line.when!(g)),
-      orElse: () => throw StateError('No conversation available for this character today'),
+      orElse: () => ScriptedLine(
+        day,
+        '${cast.firstWhere((c) => c.id == characterId).name} has nothing to add today.',
+      ),
     );
   }
 
@@ -183,11 +184,7 @@ final scenario = Scenario(
   ],
   nights: [
     // Night 1: Saboteur blocks Bob, Bob guards Frank, Jerry kills Frank.
-    NightEvent(
-      day: 1,
-      victimId: frankId,
-      morningEvents: ['Frank, the Historian, was found dead.'],
-    ),
+    NightEvent(day: 1, victimId: frankId),
     // Nights 2 and 3: Jerry kills the first living character in this order.
     NightEvent(day: 2, victimPriority: [charlieId, dianaId, bobId]),
     NightEvent(day: 3, victimPriority: [dianaId, bobId, charlieId]),

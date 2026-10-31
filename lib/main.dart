@@ -1,5 +1,8 @@
 
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/menu.dart';
 import 'screens/town.dart';
 import 'screens/evidence.dart';
@@ -7,20 +10,21 @@ import 'screens/help.dart';
 import 'screens/overlays/conversation.dart';
 import 'screens/widgets/game_nav_bar.dart';
 import 'screens/overlays/how_to_play.dart';
+import 'engine/game_engine.dart';
+import 'database/game_persistence.dart';
+import 'models/character.dart';
+import 'models/game_state.dart';
+import 'data/role_definitions.dart' as roles;   // prefix: Alignment clashes with Flutter's
+import 'data/scenarios.dart';
 
-// Temporary town member names until the game engine is implemented
-const List<String> townMembers = [
-  'Town Member 1',
-  'Town Member 2',
-  'Town Member 3',
-  'Town Member 4',
-  'Town Member 5',
-  'Town Member 6',
-  'Town Member 7',
-  'Town Member 8',
-];
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // sqflite needs the FFI factory on desktop platforms
+  if (!kIsWeb && (Platform.isWindows || Platform.isLinux)) {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
   runApp(const MyApp());
 }
 
@@ -85,6 +89,20 @@ class _GameShellState extends State<GameShell> {
   // Currently selected game tab
   GameNavTab selectedTab = GameNavTab.town;
 
+  late final GameEngine engine;
+  final GamePersistence _store = GamePersistence();
+  int _shownEvents = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    engine = GameEngine()..newGame();
+    _store.startNewGame(engine.scenario);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showNewEvents());
+  }
+
+  List<Character> get _npcs =>
+      engine.gameState.characters.where((c) => !c.isHuman).toList();
   // Switch screens without adding routes to the navigator
   void selectTab(GameNavTab tab) {
     setState(() {
@@ -92,51 +110,149 @@ class _GameShellState extends State<GameShell> {
     });
   }
 
-  // Open the conversation overlay for a town member
-  void openConversation(String name) {
-    showDialog<void>(
+  String? get _actionLabel {
+    final g = engine.gameState;
+    switch (g.currentPhase) {
+      case DayPhase.morning:       return 'Start the day';
+      case DayPhase.conversations: return 'Go to the vote';
+      case DayPhase.voting:        return null;
+      default:                     return null;
+    }
+  }
+
+  void _advance() {
+    engine.advancePhase();
+    _afterAction();
+  }
+
+  String get _status {
+    final g = engine.gameState;
+    final hint = switch (g.currentPhase) {
+      DayPhase.morning => 'Start the day when you are ready',
+      DayPhase.conversations => 'Talk to someone · Conversations left: ${g.conversationsLeft}',
+      DayPhase.voting => 'Tap someone to execute them',
+      _ => '',
+    };
+    return 'Day ${g.day}\n$hint';
+  }
+
+  void onMemberPressed(Character c) {
+    final g = engine.gameState;
+    if (g.currentPhase == DayPhase.gameOver) return;
+    if (!c.isAlive) {
+      _snack('${c.name} is dead.');
+      return;
+    }
+
+    if (g.currentPhase == DayPhase.conversations) {
+      try {
+        final before = g.conversationsLeft;
+        final line = engine.talkTo(c.id);
+        if (g.conversationsLeft < before) {
+          _store.recordHeard(c.id, g.day, line);
+          _store.saveProgress(g);
+        }
+        setState(() {});
+        _showText(c.name, line.text);
+      } on StateError catch (e) {
+        _snack(e.message);
+      }
+    } else if (g.currentPhase == DayPhase.voting) {
+      _confirmExecute(c);
+    } else {
+      _snack('You can only talk during the conversation phase.');
+    }
+  }
+
+  void _snack(String m) =>
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+
+  Future<void> _confirmExecute(Character c) async {
+    final ok = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => ConversationDialog(
-        memberName: name,
+      builder: (d) => AlertDialog(
+        title: Text('Execute ${c.name}?'),
+        content: const Text('This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(d, true), child: const Text('Execute')),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    engine.executeCharacter(c.id);
+    if (engine.gameState.currentPhase != DayPhase.gameOver) engine.advancePhase(); // run the night
+    _afterAction();
+  }
 
-        // Temporary questions and responses
-        choices: const [
-          ConversationChoice(
-            question: 'Where were you last night?',
-            response: 'I was at home all evening.',
+  // Evidence for a town member, read back from the database
+  Future<void> openMemberEvidence(String name) async {
+    final c = _npcs.firstWhere((c) => c.name == name);
+    final stored = await _store.evidenceFor(c.id);
+    final lines = stored ?? engine.gameState.heard[c.id] ?? [];
+    if (!mounted) return;
+    _showText(name, lines.isEmpty ? 'You have not spoken to $name yet.' : lines.join('\n\n'));
+  }
+
+  Future<void> _showText(String title, String text) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => ConversationDialog(memberName: title, text: text),
+    );
+  }
+
+  // Shows anything added to publicEvents since the last call (intro, deaths).
+  Future<void> _showNewEvents() async {
+    final events = engine.gameState.publicEvents;
+    if (events.length > _shownEvents) {
+      final text = events.sublist(_shownEvents).join('\n\n');
+      _shownEvents = events.length;
+      await _showText('Day ${engine.gameState.day}', text);
+    }
+  }
+
+  Future<void> _afterAction() async {
+    setState(() {});
+    _store.saveProgress(engine.gameState);
+    await _showNewEvents();
+    if (!mounted) return;
+    if (engine.gameState.currentPhase == DayPhase.gameOver) await _showEnding();
+  }
+
+  Future<void> _showEnding() {
+    final good = engine.gameState.winner == roles.Alignment.Good;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (d) => AlertDialog(
+        title: Text(good ? 'Justice' : 'Defeat'),
+        content: Text(good ? goodEnding : evilEnding),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(d);
+              Navigator.pop(context); // back to the main menu
+            },
+            child: const Text('Main menu'),
           ),
-
-          ConversationChoice(
-            question: 'Who do you suspect?',
-            response: 'I do not trust the innkeeper.',
-          ),
-
-          ConversationChoice(
-            question: 'What do you know about the demon?',
-            response: 'Only that it is hiding among us.',
+          TextButton(
+            onPressed: () {
+              Navigator.pop(d);
+              _restart();
+            },
+            child: const Text('Play again'),
           ),
         ],
       ),
     );
   }
 
-  // Temporary placeholder for town member evidence
-  void openMemberEvidence(String name) {
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(name),
-        content: const Text(
-          'Evidence for this town member will appear here.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+  void _restart() {
+    engine.newGame();
+    _shownEvents = 0;
+    _store.startNewGame(engine.scenario);
+    setState(() {});
+    _showNewEvents();
   }
 
   @override
@@ -147,21 +263,18 @@ class _GameShellState extends State<GameShell> {
       children: [
         // Town Screen
         TownScreen(
-          townMembers: townMembers,
-          onMemberPressed: openConversation,
-
-          onEvidence: () {
-            selectTab(GameNavTab.evidence);
-          },
-
-          onHelp: () {
-            selectTab(GameNavTab.help);
-          },
+          members: _npcs,
+          onMemberPressed: onMemberPressed,
+          statusText: _status,
+          actionLabel: _actionLabel,
+          onAction: _advance,
+          onEvidence: () => selectTab(GameNavTab.evidence),
+          onHelp: () => selectTab(GameNavTab.help),
         ),
 
         // Evidence Screen
         EvidenceScreen(
-          townMembers: townMembers,
+          townMembers: _npcs.map((c) => c.name).toList(),
           onMemberPressed: openMemberEvidence,
 
           onTown: () {

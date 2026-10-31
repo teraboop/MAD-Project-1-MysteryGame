@@ -1,5 +1,4 @@
 import 'character.dart';
-import 'conversation.dart';
 import '../data/scenarios.dart';
 import '../data/role_definitions.dart';
 
@@ -10,8 +9,10 @@ class GameState {
   DayPhase currentPhase;
   int conversationsLeft = 3;
   List<Character> characters = [];
-  List publicEvents = [];
+  List<String> publicEvents = [];
   List<ScriptedLine> conversationLog = [];
+  // What the player has been told, per character: "Day N: text"
+  final Map<int, List<String>> heard = {};
   int day = 1;
   GameState({this.currentPhase = DayPhase.morning});
 

@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
 import 'widgets/game_nav_bar.dart';
 import 'widgets/town_member_row.dart';
+import '../models/character.dart';
+import 'widgets/game_button.dart';
 
 // Town screen displaying the town and its members
 class TownScreen extends StatelessWidget {
-  // List of town member names supplied by the parent
-  final List<String> townMembers;
+  // List of town members supplied by the parent
+  final List<Character> members;
 
   // Functions supplied by the parent to handle user actions
-  final ValueChanged<String> onMemberPressed;
+  final ValueChanged<Character> onMemberPressed;
   final VoidCallback onEvidence;
   final VoidCallback onHelp;
+
+  final String statusText;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   // Constructor
   const TownScreen({
     super.key,
-    required this.townMembers,
+    required this.members,
     required this.onMemberPressed,
     required this.onEvidence,
     required this.onHelp,
+    required this.statusText,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
@@ -35,25 +44,36 @@ class TownScreen extends StatelessWidget {
               onEvidence: onEvidence,
               onHelp: onHelp,
             ),
-
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                statusText,
+              )
+            ),
             // Scrollable list of town members
             Expanded(
               child: ListView.builder(
-                itemCount: townMembers.length,
+                itemCount: members.length,
 
                 // Create a row for each town member
                 itemBuilder: (context, index) {
-                  final memberName = townMembers[index];
+                  final m = members[index];
 
                   return TownMemberRow(
-                    memberName: memberName,
+                    memberName: m.name,
+                    tokenLabel: m.isAlive ? '?' : 'Dead',
                     onMemberPressed: () {
-                      onMemberPressed(memberName);
+                      onMemberPressed(m);
                     },
                   );
                 },
               ),
             ),
+            if (actionLabel != null)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GameButton(text: actionLabel!, onPressed: onAction),
+                )
           ],
         ),
       ),
