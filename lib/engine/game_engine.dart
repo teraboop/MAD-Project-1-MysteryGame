@@ -1,17 +1,18 @@
 import '../models/game_state.dart';
-import '../data/role_definitions.dart';
-import '../engine/role_pool_builder.dart';
 import '../models/character.dart';
-import '../models/conversation.dart';
 import '../data/scenarios.dart';
+import 'win_checker.dart';
 import 'dart:math';
 class GameEngine {
   GameState gameState = GameState();
+  Scenario? scenario;
   final Random rng = Random();
 
-  void newGame(Scenario s, GameState gameState) {
+  void newGame(Scenario s) {
+    scenario = s;
     //final rolePool = buildRolePool(rng);
     //gameState.characters = assignRoles(Roster, rolePool, rng);
+    gameState = GameState();
     final List<Character> characterArray = [];
     for (var c in s.cast) {
       characterArray.add(Character(
@@ -23,6 +24,7 @@ class GameEngine {
       ));
     }
     gameState.characters = characterArray;
+    gameState.publicEvents.add(s.intro);
   }
 
   Character _find(int id) => gameState.characters.firstWhere(
@@ -44,7 +46,7 @@ class GameEngine {
     if (character.isHuman){
       throw StateError('Why are you talking to yourself?');
     }
-    final scriptedLine = scenario.getConversation(gameState, character.id);
+    final scriptedLine = scenario!.getConversation(gameState, character.id);
     gameState.conversationLog.add(scriptedLine);
     return scriptedLine;
   }
@@ -76,6 +78,48 @@ class GameEngine {
     final target = gameState.characters.firstWhere((c) => c.id == targetID, orElse: () => throw Exception('Target not found'));
     // Implement vote logic here
   }
+
+  void executeCharacter(int targetId) {
+  if (gameState.currentPhase != DayPhase.voting) {
+    throw StateError('Executions only happen in the voting phase');
+  }
+  final target = _find(targetId);
+  if (target.isHuman) throw StateError('You cannot execute yourself');
+  if (!target.isAlive) throw StateError('${target.name} is already dead');
+
+  killCharacter(targetId);
+  gameState.publicEvents.add('${target.name} was executed.');
+  checkWinCondition(gameState);
+  if (gameState.currentPhase != DayPhase.gameOver) {
+    gameState.currentPhase = DayPhase.night;
+  }
+}
+
+  void killCharacter(int characterID) {
+    final character = _find(characterID);
+    character.isAlive = false;
+  }
+
+  void resolveNightActions() {
+  final night = scenario!.nights.firstWhere(
+    (n) => n.day == gameState.day,
+    orElse: () => NightEvent(day: gameState.day),
+  );
+
+  int? victim = night.victimId;
+  if (victim == null) {
+    for (final id in night.victimPriority) {
+      if (_find(id).isAlive) { victim = id; break; }
+    }
+  }
+
+  if (victim != null && _find(victim).isAlive) {
+    killCharacter(victim);
+    gameState.publicEvents.add('${_find(victim).name} was found dead.');
+  }
+  gameState.publicEvents.addAll(night.morningEvents);
+  checkWinCondition(gameState);
+}
 
   void endGame() {
     gameState.currentPhase = DayPhase.gameOver;

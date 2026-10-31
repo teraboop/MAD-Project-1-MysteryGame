@@ -1,9 +1,11 @@
 import 'character.dart';
 import 'conversation.dart';
 import '../data/scenarios.dart';
+import '../data/role_definitions.dart';
 
 enum DayPhase {morning, conversations, voting, night, gameOver}
 class GameState {
+  Alignment? winner;
   
   DayPhase currentPhase;
   int conversationsLeft = 3;
@@ -13,16 +15,16 @@ class GameState {
   int day = 1;
   GameState({this.currentPhase = DayPhase.morning});
 
-  void goodWin() {
+  Alignment goodWin() {
     currentPhase = DayPhase.gameOver;
-    print('Good win condition met.');
-    //Move to good win screen or trigger good win sequence
+    winner = Alignment.Good;
+    return winner!;
   }
 
-  void evilWin() {
+  Alignment evilWin() {
     currentPhase = DayPhase.gameOver;
-    print('Evil win condition met.');
-    //Move to loss screen or trigger loss sequence
+    winner = Alignment.Evil;
+    return winner!;
   }
 
 
